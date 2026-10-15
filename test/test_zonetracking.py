@@ -151,3 +151,24 @@ class TestZonetracking(TestCase):
         self._zonetracker.update(msg)
 
         self.assertNotIn(4, self._zonetracker._zones_faulted)
+
+    def test_zone_timeout_scales_with_faulted_zones(self):
+        # With many zones faulted the keypad takes longer than EXPIRE to cycle
+        # back to a zone, so it must not be restored just for being slow.
+        for z in range(1, 31):
+            msg = Message('[00000000000000100A--],{0:03d},[f707000600e5800c0c020000],"FAULT {1:02d}                        "'.format(z, z))
+            self._zonetracker.update(msg)
+
+        self.assertEqual(len(self._zonetracker._zones_faulted), 30)
+        self._zonetracker._zones[4].timestamp -= 60
+
+        msg = Message('[00000000000000000A--],000,[f707000600e5800c0c020000],"                                "')
+        self._zonetracker.update(msg)
+
+        self.assertIn(4, self._zonetracker._zones_faulted)
+
+        # Beyond 30 zones * EXPIRE_PER_ZONE it is treated as stale.
+        self._zonetracker._zones[4].timestamp -= 100
+        self._zonetracker.update(msg)
+
+        self.assertNotIn(4, self._zonetracker._zones_faulted)
