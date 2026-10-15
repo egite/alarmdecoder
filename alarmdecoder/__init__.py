@@ -5,4 +5,6 @@ import alarmdecoder.util
 import alarmdecoder.messages
 import alarmdecoder.zonetracking
 
+__version__ = '1.13.14-E'
+
 __all__ = ['AlarmDecoder', 'decoder', 'devices', 'util', 'messages', 'zonetracking']
